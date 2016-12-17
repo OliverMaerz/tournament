@@ -6,15 +6,18 @@
 import psycopg2
 
 
-def connect():
+def connect(database_name="tournament"):
     """Connect to the PostgreSQL database.  Returns a database connection."""
-    return psycopg2.connect("dbname=tournament")
-
+    try:
+        db = psycopg2.connect("dbname=tournament".format(database_name))
+        cursor = db.cursor()
+        return db, cursor
+    except:
+        print("Error: tournament.py could not connecto to tournament database!")
 
 def deleteMatches():
     """Remove all the match records from the database."""
-    conn = connect()
-    cur = conn.cursor()
+    conn, cur = connect()
     cur.execute("""DELETE FROM matches""")
     conn.commit()
     conn.close()
@@ -22,8 +25,7 @@ def deleteMatches():
 
 def deletePlayers():
     """Remove all the player records from the database."""
-    conn = connect()
-    cur = conn.cursor()
+    conn, cur = connect()
     cur.execute("""DELETE FROM teams""")
     conn.commit()
     conn.close()
@@ -31,14 +33,11 @@ def deletePlayers():
 
 def countPlayers():
     """Returns the number of players currently registered."""
-    conn = connect()
-    cur = conn.cursor()
+    conn, cur = connect()
     cur.execute("""SELECT COUNT(*) FROM teams""")
-    rows = cur.fetchall()
+    count = cur.fetchone()[0]
     conn.close()
-    # we are only getting one row with the count so return first element
-    # of row[0]
-    return rows[0][0]
+    return count
 
 
 def registerPlayer(name):
@@ -50,8 +49,7 @@ def registerPlayer(name):
     Args:
       name: the player's full name (need not be unique).
     """
-    conn = connect()
-    cur = conn.cursor()
+    conn, cur = connect()
     query = """INSERT INTO teams(team_name) VALUES (%s)"""
     cur.execute(query, (name,))
     conn.commit()
@@ -71,8 +69,7 @@ def playerStandings():
         wins: the number of matches the player has won
         matches: the number of matches the player has played
     """
-    conn = connect()
-    cur = conn.cursor()
+    conn, cur = connect()
     # use view for teams with subqueries for wins and number of matches
     query = """select * from team_details"""
     cur.execute(query)
@@ -88,8 +85,7 @@ def reportMatch(winner, loser):
       winner:  the id number of the player who won
       loser:  the id number of the player who lost
     """
-    conn = connect()
-    cur = conn.cursor()
+    conn, cur = connect()
     query = """INSERT INTO matches(winner,loser) VALUES (%s,%s)"""
     cur.execute(query, (winner, loser))
     conn.commit()
@@ -111,8 +107,7 @@ def swissPairings():
         id2: the second player's unique id
         name2: the second player's name
     """
-    conn = connect()
-    cur = conn.cursor()
+    conn, cur = connect()
     # use view "winners" that returns the team sorted by wins
     cur.execute("""SELECT * FROM winners""")
     rows = cur.fetchall()

@@ -7,6 +7,11 @@
 -- these lines here.
 
 
+-- create database and connect
+
+DROP DATABASE IF EXISTS tournament;
+CREATE DATABASE tournament;
+\c tournament;
 
 -- teams table
 
@@ -25,21 +30,20 @@ CREATE TABLE "matches" (
 );
 
 
--- winners view - view showing teams sorted by win (includes wins column)
+-- winners view - view showing teams sorted by wins
 
-CREATE VIEW winners AS
-    SELECT team_id, team_name FROM
-        (SELECT teams.team_id, teams.team_name,
-            (SELECT COUNT(*) FROM matches WHERE matches.winner = teams.team_id)
-         AS wins FROM teams ORDER BY wins DESC) AS results
+CREATE VIEW winners AS SELECT team_id, team_name FROM
+    (SELECT teams.team_id, teams.team_name,
+        (SELECT COUNT(*) FROM matches WHERE matches.winner = teams.team_id)
+    AS wins FROM teams ORDER BY wins DESC) AS results;
 
 
 -- team details view - shows teams with wins and number of matches
 
-CREATE VIEW team_details AS SELECT teams.team_id, teams.team_name,(
-    SELECT COUNT(*) FROM matches
-        WHERE matches.winner = teams.team_id) AS wins,(
-            SELECT COUNT(*) FROM matches
+CREATE VIEW team_details AS SELECT teams.team_id, teams.team_name,
+    (SELECT COUNT(*) FROM matches
+        WHERE matches.winner = teams.team_id) AS wins,
+            (SELECT COUNT(*) FROM matches
                 WHERE matches.loser = teams.team_id
                 OR matches.winner = teams.team_id) AS matches
-        FROM teams
+    FROM teams ORDER BY wins DESC;
